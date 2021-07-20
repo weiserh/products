@@ -10,6 +10,8 @@ import { RouterModule, Routes } from '@angular/router';
 import { SharedModule } from './shared/shared.module';
 import { ProductService } from './product/product.service';
 import { HttpClientModule } from '@angular/common/http';
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { ProductStore } from './product/services/product.store';
 
 
 const productRoutes: Routes = [
@@ -29,8 +31,12 @@ const productRoutes: Routes = [
     RouterModule.forChild(productRoutes),
     SharedModule,
     HttpClientModule,
+    NgbModule,
   ],
-  providers: [ProductService],
+  providers: [
+    ProductService,
+    ProductStore,
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

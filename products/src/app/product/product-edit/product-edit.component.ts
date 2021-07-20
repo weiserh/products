@@ -7,6 +7,7 @@ import { Product } from '../product';
 import { ProductService } from '../product.service';
 import { NumberValidators } from '../../shared/number.validator';
 import { GenericValidator } from 'src/app/shared/generic-validator';
+import { ModalDismissReasons, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
   selector: 'pm-product-edit',
@@ -17,15 +18,17 @@ export class ProductEditComponent implements OnInit, OnDestroy {
   errorMessage: string = '';
   productForm: FormGroup;
 
-  product: Product | null = null;
+  product: Product;
   sub: Subscription = new Subscription;
+  closeModal: string;
 
   // Use with the generic validation message class
   displayMessage: { [key: string]: string } = {};
   private validationMessages: { [key: string]: { [key: string]: string } };
   private genericValidator: GenericValidator;
 
-  constructor(private fb: FormBuilder, private productService: ProductService) {
+  constructor(private fb: FormBuilder, private productService: ProductService,
+    private modalService: NgbModal) {
 
     // Defines all of the validation messages for the form.
     // These could instead be retrieved from a file or database.
@@ -58,8 +61,10 @@ export class ProductEditComponent implements OnInit, OnDestroy {
     });
 
     // Watch for changes to the currently selected product
-    this.sub = this.productService.selectedProductChanges$.subscribe(
-      currentProduct => this.displayProduct(currentProduct)
+    this.sub = this.productService.selectedProductChanges$.subscribe(currentProduct => {
+      if(currentProduct) {
+        this.displayProduct(currentProduct);
+      }}
     );
 
     // Watch for value changes for validation
@@ -78,7 +83,7 @@ export class ProductEditComponent implements OnInit, OnDestroy {
     this.displayMessage = this.genericValidator.processMessages(this.productForm);
   }
 
-  displayProduct(product: Product | null): void {
+  displayProduct(product: Product): void {
     // Set the local product property
     this.product = product;
 
@@ -109,18 +114,11 @@ export class ProductEditComponent implements OnInit, OnDestroy {
     this.displayProduct(product);
   }
 
-  deleteProduct(product: Product): void {
-    if (product && product.id) {
-      if (confirm(`Really delete the product: ${product.productName}?`)) {
-        this.productService.deleteProduct(product.id).subscribe({
-          next: () => this.productService.changeSelectedProduct(null),
-          error: err => this.errorMessage = err
-        });
-      }
-    } else {
-      // No need to delete, it was never saved
-      this.productService.changeSelectedProduct(null);
-    }
+  deleteProduct(): void {
+    this.productService.deleteProduct(this.product.id).subscribe({
+      next: () => this.productService.changeSelectedProduct(null),
+      error: err => this.errorMessage = err
+    });
   }
 
   saveProduct(originalProduct: Product): void {
@@ -143,6 +141,24 @@ export class ProductEditComponent implements OnInit, OnDestroy {
           });
         }
       }
+    }
+
+  }
+  triggerModal(content: any) {
+    this.modalService.open(content, { ariaLabelledBy: 'modal-basic-title' }).result.then((res) => {
+      this.closeModal = `Closed with: ${res}`;
+    }, (res) => {
+      this.closeModal = `Dismissed ${this.getDismissReason(res)}`;
+    });
+  }
+
+  private getDismissReason(reason: any): string {
+    if (reason === ModalDismissReasons.ESC) {
+      return 'by pressing ESC';
+    } else if (reason === ModalDismissReasons.BACKDROP_CLICK) {
+      return 'by clicking on a backdrop';
+    } else {
+      return `with: ${reason}`;
     }
   }
 

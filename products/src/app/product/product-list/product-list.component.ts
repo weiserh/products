@@ -1,9 +1,11 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 
 import { Subscription } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 import { Product } from '../product';
 import { ProductService } from '../product.service';
+import { ProductStore } from '../services/product.store';
 
 @Component({
   selector: 'pm-product-list',
@@ -23,17 +25,35 @@ export class ProductListComponent implements OnInit, OnDestroy {
   selectedProduct: Product | null = null;
   sub: any;
 
-  constructor(private productService: ProductService) { }
+  constructor(private productService: ProductService,
+    private productStore: ProductStore) { }
 
   ngOnInit(): void {
-    this.sub = this.productService.selectedProductChanges$.subscribe(
-      currentProduct => this.selectedProduct = currentProduct
-    );
-
-    this.productService.getProducts().subscribe({
-      next: (products: Product[]) => this.products = products,
-      error: err => this.errorMessage = err
+    
+    this.productStore.state$
+    .pipe(map(state => state.products))
+    .subscribe(data => {
+      if(data){
+        this.products = data;
+      }
     });
+    
+    this.productStore.state$
+    .pipe(map(state => state.currentProduct))
+    .subscribe(data => {
+      if(data){
+        this.selectedProduct = data;
+      }
+    });
+
+    // this.sub = this.productService.selectedProductChanges$.subscribe(
+    //   currentProduct => this.selectedProduct = currentProduct
+    // );
+    
+    // this.productService.getProducts().subscribe({
+    //   next: (products: Product[]) => this.products = products,
+    //   error: err => this.errorMessage = err
+    // });
   }
 
   ngOnDestroy(): void {
